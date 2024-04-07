@@ -6,6 +6,7 @@
     <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
     <FileList>
         <File path="src/demux_1bit_1_4.v" type="file.verilog" enable="1"/>
+        <File path="src/demux_2bit_1_4.v" type="file.verilog" enable="1"/>
         <File path="src/main.v" type="file.verilog" enable="1"/>
         <File path="src/mux_1bit_2_1.v" type="file.verilog" enable="1"/>
         <File path="src/mux_2bit_2_1.v" type="file.verilog" enable="1"/>
