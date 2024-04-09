@@ -16,3 +16,8 @@ impl/synthesize/*
 
 # misc
 *.user
+
+# sim
+a.lst
+a.out
+dump.vcd
