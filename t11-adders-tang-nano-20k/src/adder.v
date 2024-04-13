@@ -13,13 +13,25 @@ module full_adder
     input wire x, y, carry_in,
     output wire z, carry_out
 );
+
     wire [2:0] t;
 
-    xor(t[0], x, y);
-    xor(z, t[0], carry_in);
-    and(t[1], x, y);
-    and(t[2], t[0], carry_in);
+    half_adder HA1(
+        .x         (x),
+        .y         (y),
+        .z         (t[0]),
+        .carry_out (t[1])
+    );
+
+    half_adder HA2(
+        .x         (carry_in),
+        .y         (t[0]),
+        .z         (z),
+        .carry_out (t[2])
+    );
+
     or(carry_out, t[1], t[2]);
+
 endmodule
 
 module cascaded_adder
