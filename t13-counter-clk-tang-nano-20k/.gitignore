@@ -1,0 +1,23 @@
+# impl: gwsynthesis
+impl/gwsynthesis/*
+!impl/gwsynthesis/*.cfg
+
+# impl: temp
+impl/temp/*
+
+# impl: pnr
+impl/pnr/*
+!impl/pnr/*.cfg
+!impl/pnr/*.fs
+
+# impl: synthesize
+impl/synthesize/*
+!impl/synthesize/*.cfg
+
+# misc
+*.user
+
+# sim
+a.lst
+a.out
+dump.vcd
