@@ -7,7 +7,7 @@ module jk_trigger
 	output reg q
 );
 
-always @ (posedge clk)
+always @ (posedge clk or negedge rst_n)
 begin
 	if (!rst_n)
 		q <= 0;
