@@ -3,12 +3,12 @@
 module testbench;
 
 	reg clk, rst_n;
-	wire [2:0] out;
+	wire [2:0] count_up;
 
-	sync_3bit_8_counter c(
+	sync_3bit_8_counter c_up(
 		.clk   (clk),
 		.rst_n (rst_n),
-		.out   (out)
+		.out   (count_up)
 	);
 
 	initial begin
@@ -19,9 +19,11 @@ module testbench;
 
 	initial begin
 		$dumpvars;
-		$monitor ("Time: %0d, clk: %b, out: %b", $time, clk, out);
+		$monitor ("Time: %0d, clk: %b, up: %b", $time, clk, count_up);
 
-		#50  rst_n = 1;
+		#50   rst_n = 1;
+		#200  rst_n = 0;
+		#250  rst_n = 1;
 
 		#500 $finish;
 	end

@@ -3,12 +3,20 @@
 module testbench;
 
 	reg clk, rst_n;
-	wire [3:0] out;
+	wire [3:0] upcount, downcount;
 
-	async_4bit_16_counter c(
+	async_4bit_16_counter c_up(
 		.clk   (clk),
+		.dir   (1'b1),
 		.rst_n (rst_n),
-		.out   (out)
+		.out   (upcount)
+	);
+
+	async_4bit_16_counter c_down(
+		.clk   (clk),
+		.dir   (1'b0),
+		.rst_n (rst_n),
+		.out   (downcount)
 	);
 
 	initial begin
@@ -19,7 +27,7 @@ module testbench;
 
 	initial begin
 		$dumpvars;
-		$monitor ("Time: %0d, clk: %b, out: %b", $time, clk, out);
+		$monitor ("Time: %0d, clk: %b, up: %b, down: %b", $time, clk, upcount, downcount);
 
 		#100   rst_n = 1;
 		#1000  rst_n = 0;

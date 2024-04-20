@@ -40,18 +40,26 @@ module sync_3bit_8_counter
 
 endmodule
 
-// Asynchronous 4-digit down-counter
+// Asynchronous 4-digit counter
 // See chapter/section on asynchronous counters
 // in the "Digital Electronics" book by R. Tokheim
 
 module async_4bit_16_counter
 (
 	input clk,
+	input dir,
 	input rst_n,
 	output [3:0] out
 );
+
+	function clk_dir (input dir, clk);
+		begin
+			clk_dir = (dir == 1'b1) ? ~clk : clk;
+		end
+	endfunction
+
 	jk_trigger jk1(
-		.clk   (clk),
+		.clk   (clk_dir(dir, clk)),
 		.j     (1'b1),
 		.k     (1'b1),
 		.rst_n (rst_n),
@@ -59,7 +67,7 @@ module async_4bit_16_counter
 	);
 
 	jk_trigger jk2(
-		.clk   (out[0]),
+		.clk   (clk_dir(dir, out[0])),
 		.j     (1'b1),
 		.k     (1'b1),
 		.rst_n (rst_n),
@@ -67,7 +75,7 @@ module async_4bit_16_counter
 	);
 
 	jk_trigger jk3(
-		.clk   (out[1]),
+		.clk   (clk_dir(dir, out[1])),
 		.j     (1'b1),
 		.k     (1'b1),
 		.rst_n (rst_n),
@@ -75,7 +83,7 @@ module async_4bit_16_counter
 	);
 
 	jk_trigger jk4(
-		.clk   (out[2]),
+		.clk   (clk_dir(dir, out[2])),
 		.j     (1'b1),
 		.k     (1'b1),
 		.rst_n (rst_n),
