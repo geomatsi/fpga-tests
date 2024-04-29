@@ -3,21 +3,21 @@
 module testbench;
 
 	reg  clk, w_en;
-	reg [3:0] data_in;
-	reg [1:0] addr;
-	wire [3:0] data_out;
+	reg [7:0] data_in;
+	reg [3:0] addr;
+	wire [7:0] data_out;
 
-	regfile #(.DATA_WIDTH(4), .ADDR_WIDTH(2))  regfile1(clk, w_en, data_in, addr, data_out);
+	regfile #(.DATA_WIDTH(8), .ADDR_WIDTH(4))  regfile1(clk, w_en, data_in, addr, data_out);
 
 	initial begin
 		clk = 1;
 		w_en = 1;
-		addr = 2'b00;
-		data_in = 4'b1111;
+		addr = 4'b0000;
+		data_in = 8'b11111111;
 
 		#5
 
-		repeat (3) begin
+		repeat (15) begin
 			#20
 			addr = addr + 2'b01;
 		end
@@ -25,10 +25,10 @@ module testbench;
 		#40
 
 		w_en = 0;
-		addr = 2'b00;
-		data_in = 4'b0000;
+		addr = 4'b0000;
+		data_in = 8'b00000000;
 
-		repeat (3) begin
+		repeat (15) begin
 			#20
 			addr = addr + 2'b01;
 		end
@@ -36,10 +36,10 @@ module testbench;
 		#40
 
 		w_en = 1;
-		addr = 2'b00;
-		data_in = 4'b1010;
+		addr = 4'b0000;
+		data_in = 8'b10101010;
 
-		repeat (3) begin
+		repeat (15) begin
 			#20
 			addr = addr + 2'b01;
 		end
@@ -47,10 +47,10 @@ module testbench;
 		#40
 
 		w_en = 0;
-		addr = 2'b00;
-		data_in = 4'b0000;
+		addr = 4'b0000;
+		data_in = 8'b00000000;
 
-		repeat (3) begin
+		repeat (15) begin
 			#20
 			addr = addr + 2'b01;
 		end
@@ -59,7 +59,7 @@ module testbench;
 	always #10 clk = ~clk;
 
 	initial
-		#500 $finish;
+		#1500 $finish;
 
 	initial
 		$monitor("clk=%b addr=%h data_in=%h data_out=%h", clk, addr, data_in, data_out);
