@@ -19,7 +19,7 @@ module xmit_test
             .clk_out (clk_out)
     );
 
-    uart_115200_8n1_test uart_xmit(
+    uart_115200_8n1_v1 uart_xmit(
         .clk (clk_out),
         .ena (ena),
         .data (8'b01000001),

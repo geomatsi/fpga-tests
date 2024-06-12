@@ -1,4 +1,4 @@
-module uart_115200_8n1_test
+module uart_115200_8n1_v1
 (
     input clk,
     input ena,

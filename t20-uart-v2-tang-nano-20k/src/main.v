@@ -58,7 +58,7 @@ module xmit_test
         .data_out (romdata)
     );
 
-    uart_115200_8n1_test uart_xmit(
+    uart_115200_8n1_v1 uart_xmit(
         .clk  (clk_uart),
         .ena  (xmit),
         .data (char),

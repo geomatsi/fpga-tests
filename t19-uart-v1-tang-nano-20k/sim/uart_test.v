@@ -8,7 +8,7 @@ module testbench;
 	wire tx;
 	wire done;
 
-	uart_115200_8n1_test uart(
+	uart_115200_8n1_v1 uart(
 		.clk  (clk),
 		.ena  (ena),
 		.data (data),
