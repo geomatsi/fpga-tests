@@ -9,6 +9,7 @@
 //						I_mode[2:0] = "011" : single green
 //                      I_mode[2:0] = "100" : single blue
 //                      I_mode[2:0] = "101" : single red
+//                      I_mode[2:0] = "111" : tiled 180x120 image from ROM
 //                
 // ---------------------------------------------------------------------
 // Release history
@@ -54,6 +55,10 @@ localparam	MAGENTA	= {8'd255 , 8'd0   , 8'd255 };
 localparam	RED		= {8'd0   , 8'd0   , 8'd255 };
 localparam	BLUE	= {8'd255 , 8'd0   , 8'd0   };
 localparam	BLACK	= {8'd0   , 8'd0   , 8'd0   };
+
+//ROM image geometry: 180 x 120 pixels
+localparam  ROM_W        = 15'd180;
+localparam  ROM_LAST_ROW = 15'd21420; //(120-1)*180
   
 //====================================================
 reg  [11:0]   V_cnt     ;
@@ -98,6 +103,14 @@ reg  [23:0]   Gray_d1;
 
 //-----------------------------
 wire [23:0]   Single_color;
+
+//----------------------------
+//Picture in ROM
+reg  [7:0]    Rom_x     ;
+reg  [14:0]   Rom_base  ;
+reg  [14:0]   Rom_addr  ;
+wire [23:0]   Rom_pixel ;
+wire [23:0]   Picture   ;
 
 //-------------------------------
 wire [23:0]   Data_sel;
@@ -324,7 +337,60 @@ end
 //---------------------------------------------------
 assign Single_color = {I_single_b,I_single_g,I_single_r};
 
+//---------------------------------------------------
+//Picture in BROM
+//---------------------------------------------------
+//The ROM holds a 180x120 image; it is tiled over the whole
+//active area, so the source coordinates just wrap.
+//Rom_x tracks De_hcnt, Rom_base is the ROM row start
+//(De_vcnt*180), kept as an accumulator to avoid a multiplier.
+always @(posedge I_pxl_clk or negedge I_rst_n)
+begin
+	if(!I_rst_n)
+		Rom_x <= 8'd0;
+	else if (De_pos == 1'b1)
+		Rom_x <= 8'd0;
+	else if (Pout_de_dn[1] == 1'b1)
+		Rom_x <= (Rom_x == (ROM_W-1'b1)) ? 8'd0 : Rom_x + 1'b1;
+	else
+		Rom_x <= Rom_x;
+end
+
+always @(posedge I_pxl_clk or negedge I_rst_n)
+begin
+	if(!I_rst_n)
+		Rom_base <= 15'd0;
+	else if (Vs_pos == 1'b1)
+		Rom_base <= 15'd0;
+	else if (De_neg == 1'b1)
+		Rom_base <= (Rom_base == ROM_LAST_ROW) ? 14'd0 : Rom_base + ROM_W;
+	else
+		Rom_base <= Rom_base;
+end
+
+//Rom_x/Rom_base are valid at the Pout_de_dn[1] stage. One register
+//here plus one inside the ROM line the pixel up with Color_bar,
+//Net_grid and Gray_d1, which are all valid at the Pout_de_dn[3] stage.
+always @(posedge I_pxl_clk or negedge I_rst_n)
+begin
+	if(!I_rst_n)
+		Rom_addr <= 15'd0;
+	else
+		Rom_addr <= Rom_base + Rom_x;
+end
+
+tile_rom tile_rom_inst
+(
+	.clk  (I_pxl_clk),
+	.addr (Rom_addr ),
+	.data (Rom_pixel)
+);
+
+//rom.hex is packed {R,G,B} (see README), the pipeline wants {B,G,R}
+assign Picture = {Rom_pixel[7:0],Rom_pixel[15:8],Rom_pixel[23:16]};
+
 //============================================================
+
 assign Data_sel = (I_mode[2:0] == 3'b000) ? Color_bar		: 
                   (I_mode[2:0] == 3'b001) ? Net_grid 		: 
                   (I_mode[2:0] == 3'b010) ? Gray_d1    		: 
@@ -332,7 +398,7 @@ assign Data_sel = (I_mode[2:0] == 3'b000) ? Color_bar		:
                   (I_mode[2:0] == 3'b100) ? {4{GREEN}}   	: 
                   (I_mode[2:0] == 3'b101) ? {4{RED}}  	    : 
                   (I_mode[2:0] == 3'b110) ? {4{WHITE}}  	: 
-                                            {4{BLACK}} 	    ;
+                                            Picture  	    ;
 
 //---------------------------------------------------
 always @(posedge I_pxl_clk or negedge I_rst_n)
@@ -347,5 +413,4 @@ assign O_data_r = Data_tmp[ 7: 0];
 assign O_data_g = Data_tmp[15: 8];
 assign O_data_b = Data_tmp[23:16];
 
-endmodule       
-              
+endmodule

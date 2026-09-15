@@ -8,6 +8,7 @@
         <File path="src/dvi_tx/dvi_tx.v" type="file.verilog" enable="1"/>
         <File path="src/gowin_rpll/TMDS_rPLL.v" type="file.verilog" enable="1"/>
         <File path="src/key_led_ctrl.v" type="file.verilog" enable="1"/>
+        <File path="src/sprom.v" type="file.verilog" enable="1"/>
         <File path="src/testpattern.v" type="file.verilog" enable="1"/>
         <File path="src/video_top.v" type="file.verilog" enable="1"/>
         <File path="src/hdmi.cst" type="file.cst" enable="1"/>
