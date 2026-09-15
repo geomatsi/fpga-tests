@@ -23,9 +23,6 @@ module testpattern
 	input              I_pxl_clk   ,//pixel clock
     input              I_rst_n     ,//low active 
     input      [2:0]   I_mode      ,//data select
-    input      [7:0]   I_single_r  ,
-    input      [7:0]   I_single_g  ,
-    input      [7:0]   I_single_b  ,
     input      [11:0]  I_h_total   ,//hor total time 
     input      [11:0]  I_h_sync    ,//hor sync time
     input      [11:0]  I_h_bporch  ,//hor back porch
@@ -100,9 +97,6 @@ reg  [23:0]   Net_grid  ;
 //Gray  
 reg  [23:0]   Gray;
 reg  [23:0]   Gray_d1;
-
-//-----------------------------
-wire [23:0]   Single_color;
 
 //----------------------------
 //Picture in ROM
@@ -331,11 +325,6 @@ begin
 	else
 		Gray_d1 <= Gray;
 end
-
-//---------------------------------------------------
-//Single color
-//---------------------------------------------------
-assign Single_color = {I_single_b,I_single_g,I_single_r};
 
 //---------------------------------------------------
 //Picture in BROM

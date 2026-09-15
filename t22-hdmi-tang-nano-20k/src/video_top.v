@@ -108,9 +108,7 @@ testpattern testpattern_inst
     .I_pxl_clk   (pix_clk            ),//pixel clock
     .I_rst_n     (hdmi4_rst_n        ),//low active 
     .I_mode      (mode_reg           ),//data select
-    .I_single_r  (8'd0               ),
-    .I_single_g  (8'd255             ),
-    .I_single_b  (8'd0               ),                  //800x600    //1024x768   //1280x720   //720x480
+                                                         //800x600    //1024x768   //1280x720   //720x480
     .I_h_total   (12'd858            ),//hor total time  // 12'd1056  // 12'd1344  // 12'd1650  // 12'd858
     .I_h_sync    (12'd62             ),//hor sync time   // 12'd128   // 12'd136   // 12'd40    // 12'd62
     .I_h_bporch  (12'd60             ),//hor back porch  // 12'd88    // 12'd160   // 12'd220   // 12'd60
@@ -169,7 +167,7 @@ DVI_TX_Top DVI_TX_Top_inst
     .I_rgb_vs      (tp0_vs_in     ), 
     .I_rgb_hs      (tp0_hs_in     ),    
     .I_rgb_de      (tp0_de_in     ), 
-    .I_rgb_r       (  tp0_data_r ),  //tp0_data_r
+    .I_rgb_r       (  tp0_data_r  ),  //tp0_data_r
     .I_rgb_g       (  tp0_data_g  ),  
     .I_rgb_b       (  tp0_data_b  ),  
     .O_tmds_clk_p  (O_tmds_clk_p  ),
