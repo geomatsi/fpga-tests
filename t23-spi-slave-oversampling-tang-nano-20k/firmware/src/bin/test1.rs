@@ -3,6 +3,7 @@
 
 use cortex_m as cm;
 use cortex_m_rt::entry;
+use cortex_m_semihosting::hprintln;
 use panic_semihosting as _;
 use stm32f4xx_hal::{
     gpio::Pull,
@@ -16,7 +17,9 @@ use stm32f4xx_hal::{
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
     let cp = cm::Peripherals::take().unwrap();
-    let mut rcc = dp.RCC.freeze(rcc::Config::hse(25.MHz()).sysclk(84.MHz()).pclk1(42.MHz()));
+    let mut rcc = dp
+        .RCC
+        .freeze(rcc::Config::hse(25.MHz()).sysclk(84.MHz()).pclk1(42.MHz()));
 
     let gpioa = dp.GPIOA.split(&mut rcc);
     let gpioc = dp.GPIOC.split(&mut rcc);
@@ -42,17 +45,20 @@ fn main() -> ! {
         &mut rcc,
     );
 
-    let mut byte: u8 = 0;
+    let mut tx = [0u8; 1];
+    let mut rx = [0u8; 1];
 
     loop {
-            // write returns once the byte has been clocked out (waits for RXNE)
-            cs_n.set_low();
-            spi.write(&[byte]).unwrap();
-            cs_n.set_high();
+        // full duplex: send one byte on MOSI, receive one byte from MISO
+        cs_n.set_low();
+        spi.transfer(&mut rx, &tx).unwrap();
+        cs_n.set_high();
 
-            byte = byte.wrapping_add(1);
+        hprintln!("tx: 0x{:02x} rx: 0x{:02x}", tx[0], rx[0]);
 
-            delay.delay_ms(1000u32);
-            led.toggle();
+        tx[0] = tx[0].wrapping_add(1);
+
+        delay.delay_ms(1000u32);
+        led.toggle();
     }
 }

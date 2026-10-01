@@ -6,11 +6,12 @@ module testbench;
 
 	reg sclk;
 	reg cs_n;
-	reg miso;
 	reg mosi;
+	wire miso;
 
 	wire data_valid;
-	wire [7:0] data;
+	wire [7:0] rx_byte;
+	reg  [7:0] tx_byte;
 
 	spi_slave_oversampled spi_block(
 	    .clk(sysclk),
@@ -20,7 +21,8 @@ module testbench;
 	    .MISO(miso),
 	
 	    .data_valid(data_valid),
-	    .data(data)
+	    .rx_byte(rx_byte),
+	    .tx_byte(tx_byte)
 	);
 
 	initial begin
@@ -28,8 +30,9 @@ module testbench;
 
 		sclk = 0;
 		cs_n = 1;
-		miso = 0;
 		mosi = 0;
+
+		tx_byte = 0;
 
 		#350;
 		cs_n = 0;

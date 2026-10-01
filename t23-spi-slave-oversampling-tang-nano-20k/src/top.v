@@ -10,7 +10,8 @@ module test_spi_slave_oversampled
     output [5:0] leds
 );
 
-wire [7:0] data;
+wire [7:0] rx_byte;
+wire [7:0] tx_byte;
 wire data_valid;
 
 spi_slave_oversampled spi_block(
@@ -21,7 +22,8 @@ spi_slave_oversampled spi_block(
     .MISO(miso),
 
     .data_valid(data_valid),
-    .data(data)
+    .rx_byte(rx_byte),
+    .tx_byte(tx_byte)
 );
 
 wire [7:0] command;
@@ -32,15 +34,18 @@ control_leds leds_block(
     .leds(leds)
 );
 
-reg  [7:0] rxbyte;
+reg  [7:0] rx_byte_reg;
+reg  [7:0] tx_byte_reg;
 
 always @(posedge sysclk) begin
     if (data_valid)
     begin
-        rxbyte <= data;
+        tx_byte_reg <= rx_byte;
+        rx_byte_reg <= rx_byte;
     end
 end
 
-assign command = rxbyte;
+assign command = rx_byte_reg;
+assign tx_byte = tx_byte_reg;
 
 endmodule
