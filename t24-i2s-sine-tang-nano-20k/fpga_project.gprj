@@ -6,6 +6,7 @@
     <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
     <FileList>
         <File path="src/divider.v" type="file.verilog" enable="1"/>
+        <File path="src/i2s.v" type="file.verilog" enable="1"/>
         <File path="src/top.v" type="file.verilog" enable="1"/>
     </FileList>
 </Project>
