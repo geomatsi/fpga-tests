@@ -21,3 +21,4 @@ impl/synthesize/*
 a.lst
 a.out
 dump.vcd
+out.txt
