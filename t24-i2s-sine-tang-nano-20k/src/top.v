@@ -8,24 +8,26 @@ module i2s_sine_test
     output       HP_DIN
 );
 
-wire clk_1p5m;
+wire bck;
+wire bck_fall;
 wire rst_n;
 
 assign rst_n = !rst ;
 
-// I2S bit clock from 27 MHz: 27 MHz / 18 = 1.5 MHz
+// I2S bit clock from 27 MHz: 27 MHz / 18 = 1.5 MHz. All logic runs on clk;
+// bck only drives the HP_BCK pin, bck_fall is the bit-rate enable.
 clk_div_en #(.DIV(18)) audio_bit_clk(
     .clk(clk),
     .rst_n(rst_n),
     .tick(),
-    .tick_fall(),
-    .clk_out(clk_1p5m)
+    .tick_fall(bck_fall),
+    .clk_out(bck)
 );
 
 wire req_data_s;
 
-// req pulses twice per frame (before L and R loads); tick the NCO only on the
-// one before the L load (WS still high from the previous R slot)
+// req is a 1-cycle pulse twice per frame (before L and R loads); tick the NCO
+// only on the one before the L load (WS still high from the previous R slot)
 wire frame_tick = req_data_s & HP_WS;
 
 localparam [31:0] STEP = 32'd54975581; // f_out / f_s * 2^32 = 600 / 46875 * 2^32; f_s = 1.5 MHz / 32
@@ -38,14 +40,16 @@ wire signed [15:0] sin_sat = (sin_o >  17'sd32767) ? 16'sd32767 : (sin_o < -17's
 // Hold one sample for the whole frame so L and R get the same value
 // (the NCO result for this tick lands well before the next frame)
 reg signed [15:0] audio;
-always @(posedge clk_1p5m or negedge rst_n)
+always @(posedge clk or negedge rst_n)
     if (!rst_n)          audio <= 16'sd0;
     else if (frame_tick) audio <= sin_sat;
 
 // I2S audio driver
 audio_drive audio_out(
-    .clk_1p536m(clk_1p5m),
+    .clk(clk),
     .rst_n(rst_n),
+    .bck(bck),
+    .bck_fall(bck_fall),
 
     .idata(audio),
     .req(req_data_s),
@@ -57,7 +61,7 @@ audio_drive audio_out(
 
 // Cordic sine generator
 nco_cordic sine_wave(
-    .clk(clk_1p5m),
+    .clk(clk),
     .rst_n(rst_n),
     .tick(frame_tick),
     .step(STEP),
