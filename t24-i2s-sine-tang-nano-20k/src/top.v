@@ -24,11 +24,8 @@ clk_div_en #(.DIV(18)) audio_bit_clk(
     .clk_out(bck)
 );
 
-wire req_data_s;
-
-// req is a 1-cycle pulse twice per frame (before L and R loads); tick the NCO
-// only on the one before the L load (WS still high from the previous R slot)
-wire frame_tick = req_data_s & HP_WS;
+// Tick the NCO once per frame, on the data request before the L load
+wire frame_tick;
 
 localparam [31:0] STEP = 32'd54975581; // f_out / f_s * 2^32 = 600 / 46875 * 2^32; f_s = 1.5 MHz / 32
 wire signed [16:0] cos_o;
@@ -37,8 +34,9 @@ wire valid;
 
 wire signed [15:0] sin_sat = (sin_o >  17'sd32767) ? 16'sd32767 : (sin_o < -17'sd32768) ? -16'sd32768 : sin_o[15:0];
 
-// Hold one sample for the whole frame so L and R get the same value
-// (the NCO result for this tick lands well before the next frame)
+// Latch the NCO output on each request; the driver reads it one BCK later.
+// The same sample goes to both channels (the NCO result for this tick lands
+// well before the next frame)
 reg signed [15:0] audio;
 always @(posedge clk or negedge rst_n)
     if (!rst_n)          audio <= 16'sd0;
@@ -51,8 +49,9 @@ audio_drive audio_out(
     .bck(bck),
     .bck_fall(bck_fall),
 
-    .idata(audio),
-    .req(req_data_s),
+    .ldata(audio),
+    .rdata(audio),
+    .req(frame_tick),
 
     .HP_BCK(HP_BCK),
     .HP_WS(HP_WS),

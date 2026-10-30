@@ -6,8 +6,10 @@ module audio_drive(
                                 // each sample frame takes 32 BCK periods (16 per channel, L and R)
 
     // User data interface
-    input [15:0] idata,
-    output       req,           // 1-cycle data request, twice per frame (before the L and R loads); idata is read on the next bck_fall
+    input [15:0] ldata,         // left channel sample
+    input [15:0] rdata,         // right channel sample
+    output       req,           // 1-cycle data request, once per frame (before the L load);
+                                // ldata and rdata are both read on the next bck_fall
 
     // I2S audio interface
     output       HP_BCK,        // same as bck
@@ -22,6 +24,7 @@ module audio_drive(
 localparam LAT = 3;
 
 reg [15:0] idata_r;
+reg [15:0] rdata_h;             // right sample held from the L load until the R load
 reg [4:0] b_cnt;
 reg HP_DIN_r;
 reg HP_WS_r;
@@ -31,7 +34,8 @@ reg req_r;
 assign HP_BCK = bck;
 assign HP_WS  = HP_WS_r;
 assign HP_DIN = HP_DIN_r;
-assign req    = req_r & bck_fall;
+// req_r is high while b_cnt is 1 (before the L load) and 17 (before the R load); b_cnt[4] drops the R one
+assign req = req_r & bck_fall & ~b_cnt[4];
 
 
 always@(posedge clk or negedge rst_n)
@@ -57,11 +61,21 @@ if(!rst_n)
     begin
     req_r1  <= 1'b0;
     idata_r <= 16'd0;
+    rdata_h <= 16'd0;
     end
 else if(bck_fall)
     begin
     req_r1  <= req_r;
-    idata_r <= req_r1 ? idata : idata_r<<1;
+    // req_r1 marks the loads: b_cnt 2 for L (also capture R), 18 for R
+    if(req_r1 && !b_cnt[4])
+        begin
+        idata_r <= ldata;
+        rdata_h <= rdata;
+        end
+    else if(req_r1)
+        idata_r <= rdata_h;
+    else
+        idata_r <= idata_r<<1;
     end
 end
 
