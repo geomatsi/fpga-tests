@@ -18,6 +18,9 @@ module audio_drive(
 // HP_WS and HP_DIN change one clk after BCK falls, so they are stable
 // for half a BCK period before the DAC samples them on the BCK rising edge.
 
+// bck_falls from frame start (b_cnt 0) to the MSB on HP_DIN: req_r -> req_r1 -> idata_r -> HP_DIN_r
+localparam LAT = 3;
+
 reg [15:0] idata_r;
 reg [4:0] b_cnt;
 reg HP_DIN_r;
@@ -75,7 +78,8 @@ begin
 if(!rst_n)
     HP_WS_r <= 1'b0;
 else if(bck_fall)
-    HP_WS_r <= (b_cnt == 5'd3) ? 1'b0 : ((b_cnt == 5'd19) ? 1'b1 : HP_WS_r);
+    // Philips I2S (MAX98357A): WS toggles one BCK before the MSB (L MSB goes out at b_cnt LAT, R MSB at 16+LAT)
+    HP_WS_r <= (b_cnt == LAT-1) ? 1'b0 : ((b_cnt == 16+LAT-1) ? 1'b1 : HP_WS_r);
 end
 
 endmodule
