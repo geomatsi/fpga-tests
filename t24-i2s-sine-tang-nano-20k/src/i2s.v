@@ -20,20 +20,19 @@ module audio_drive(
 // HP_WS and HP_DIN change one clk after BCK falls, so they are stable
 // for half a BCK period before the DAC samples them on the BCK rising edge.
 
-// bck_falls from frame start (b_cnt 0) to the MSB on HP_DIN: req_r -> req_r1 -> idata_r -> HP_DIN_r
-localparam LAT = 3;
+// bck_falls from frame start (b_cnt 0) to the MSB on HP_DIN: req_r -> req_r1 -> idata_r
+localparam LAT = 2;
 
 reg [15:0] idata_r;
 reg [15:0] rdata_h;             // right sample held from the L load until the R load
 reg [4:0] b_cnt;
-reg HP_DIN_r;
 reg HP_WS_r;
 reg req_r1;
 reg req_r;
 
 assign HP_BCK = bck;
 assign HP_WS  = HP_WS_r;
-assign HP_DIN = HP_DIN_r;
+assign HP_DIN = idata_r[15];
 // req_r is high while b_cnt is 1 (before the L load) and 17 (before the R load); b_cnt[4] drops the R one
 assign req = req_r & bck_fall & ~b_cnt[4];
 
@@ -77,14 +76,6 @@ else if(bck_fall)
     else
         idata_r <= idata_r<<1;
     end
-end
-
-always@(posedge clk or negedge rst_n)
-begin
-if(!rst_n)
-    HP_DIN_r <= 1'b0;
-else if(bck_fall)
-    HP_DIN_r <= idata_r[15];
 end
 
 always@(posedge clk or negedge rst_n)
