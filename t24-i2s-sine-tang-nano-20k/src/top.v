@@ -1,11 +1,23 @@
 module i2s_sine_test
 (
+    // infrastructure part
     input clk,
     input rst,
+    input btn,
 
+    // i2s part
     output       HP_BCK,
     output       HP_WS,
-    output       HP_DIN
+    output       HP_DIN,
+
+    // spi part
+    input  sclk,
+    input  cs_n,
+    input  mosi,
+    output miso,
+
+    // leds part
+    output [5:0] leds
 );
 
 wire bck;
@@ -68,5 +80,44 @@ nco_cordic sine_wave(
     .cos_o(cos_o),
     .valid(valid)
 );
+
+// SPI control
+
+wire [7:0] rx_byte;
+wire [7:0] tx_byte;
+wire [7:0] command;
+wire data_valid;
+
+reg  [7:0] rx_byte_reg;
+reg  [7:0] tx_byte_reg;
+
+spi_slave_oversampled spi_block(
+    .clk(clk),
+    .CS_N(cs_n),
+    .SCLK(sclk),
+    .MOSI(mosi),
+    .MISO(miso),
+
+    .data_valid(data_valid),
+    .rx_byte(rx_byte),
+    .tx_byte(tx_byte)
+);
+
+control_leds leds_block(
+    .clk(clk),
+    .cmd(command),
+    .leds(leds)
+);
+
+always @(posedge clk) begin
+    if (data_valid)
+    begin
+        tx_byte_reg <= rx_byte;
+        rx_byte_reg <= rx_byte;
+    end
+end
+
+assign command = rx_byte_reg;
+assign tx_byte = tx_byte_reg;
 
 endmodule

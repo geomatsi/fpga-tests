@@ -8,7 +8,9 @@
         <File path="src/cordic/cordic.v" type="file.verilog" enable="1"/>
         <File path="src/divider.v" type="file.verilog" enable="1"/>
         <File path="src/i2s.v" type="file.verilog" enable="1"/>
+        <File path="src/leds.v" type="file.verilog" enable="1"/>
         <File path="src/nco_cordic.v" type="file.verilog" enable="1"/>
+        <File path="src/spi.v" type="file.verilog" enable="1"/>
         <File path="src/top.v" type="file.verilog" enable="1"/>
         <File path="src/fpga_project.cst" type="file.cst" enable="1"/>
     </FileList>
