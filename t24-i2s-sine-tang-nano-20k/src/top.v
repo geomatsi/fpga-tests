@@ -69,10 +69,26 @@ always @(posedge clk or negedge rst_n)
     if (!rst_n)          audio <= 16'sd0;
     else if (frame_tick) audio <= sin_sat;
 
+// btn toggles the I2S driver reset: one press stops the output, the next resumes
+reg btn_pressed_q = 1'b0;
+reg i2s_rst_n     = 1'b1;
+
+always @(posedge clk or negedge rst_n)
+    if (!rst_n) begin
+        btn_pressed_q <= 1'b0;
+        i2s_rst_n     <= 1'b1;
+    end
+    else
+    begin
+        btn_pressed_q <= btn_pressed;
+        if (btn_pressed & ~btn_pressed_q)       // press edge, once per press
+            i2s_rst_n <= ~i2s_rst_n;
+    end
+
 // I2S audio driver
 audio_drive audio_out(
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(i2s_rst_n),
     .bck(bck),
     .bck_fall(bck_fall),
 
@@ -114,8 +130,6 @@ always @(posedge clk or negedge rst_n) begin
         tx_byte_reg <= 8'd0;
         rx_byte_reg <= FREQ_DEFAULT;
     end
-    else if (btn_pressed)
-        rx_byte_reg <= FREQ_DEFAULT;            // btn: back to the default frequency, SPI writes ignored while held
     else if (data_valid)
     begin
         tx_byte_reg <= rx_byte;
