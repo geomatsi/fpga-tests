@@ -23,8 +23,24 @@ module i2s_sine_test
 wire bck;
 wire bck_fall;
 wire rst_n;
+wire btn_pressed;
 
-assign rst_n = !rst ;
+// Both on-board buttons: synchronized and debounced (5 ms at 27 MHz).
+// rst also gives the power-on reset: rst_n is low for the first POR_CYCLES
+// clocks after configuration and while rst is pressed.
+btn_reset #(.DEBOUNCE(135000)) rst_block(
+    .clk(clk),
+    .btn(rst),
+    .pressed(),
+    .rst_n(rst_n)
+);
+
+btn_reset #(.DEBOUNCE(135000)) btn_block(
+    .clk(clk),
+    .btn(btn),
+    .pressed(btn_pressed),
+    .rst_n()
+);
 
 // I2S bit clock from 27 MHz: 27 MHz / 18 = 1.5 MHz. All logic runs on clk;
 // bck only drives the HP_BCK pin, bck_fall is the bit-rate enable.
@@ -90,12 +106,16 @@ spi_slave_oversampled spi_block(
     .tx_byte(tx_byte)
 );
 
+localparam [7:0] FREQ_DEFAULT = 8'd150;     // 4 * 150 = 600 Hz until the MCU sets a frequency
+
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n)
     begin
         tx_byte_reg <= 8'd0;
-        rx_byte_reg <= 8'd150;      // 4 * 150 = 600 Hz until the MCU sets a frequency
+        rx_byte_reg <= FREQ_DEFAULT;
     end
+    else if (btn_pressed)
+        rx_byte_reg <= FREQ_DEFAULT;            // btn: back to the default frequency, SPI writes ignored while held
     else if (data_valid)
     begin
         tx_byte_reg <= rx_byte;
