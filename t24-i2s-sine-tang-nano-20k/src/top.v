@@ -39,7 +39,6 @@ clk_div_en #(.DIV(18)) audio_bit_clk(
 // Tick the NCO once per frame, on the data request before the L load
 wire frame_tick;
 
-localparam [31:0] STEP = 32'd54975581; // f_out / f_s * 2^32 = 600 / 46875 * 2^32; f_s = 1.5 MHz / 32
 wire signed [16:0] cos_o;
 wire signed [16:0] sin_o;
 wire valid;
@@ -70,22 +69,10 @@ audio_drive audio_out(
     .HP_DIN(HP_DIN)
 );
 
-// Cordic sine generator
-nco_cordic sine_wave(
-    .clk(clk),
-    .rst_n(rst_n),
-    .tick(frame_tick),
-    .step(STEP),
-    .sin_o(sin_o),
-    .cos_o(cos_o),
-    .valid(valid)
-);
-
-// SPI control
+// SPI
 
 wire [7:0] rx_byte;
 wire [7:0] tx_byte;
-wire [7:0] command;
 wire data_valid;
 
 reg  [7:0] rx_byte_reg;
@@ -103,21 +90,57 @@ spi_slave_oversampled spi_block(
     .tx_byte(tx_byte)
 );
 
-control_leds leds_block(
-    .clk(clk),
-    .cmd(command),
-    .leds(leds)
-);
-
-always @(posedge clk) begin
-    if (data_valid)
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+    begin
+        tx_byte_reg <= 8'd0;
+        rx_byte_reg <= 8'd150;      // 4 * 150 = 600 Hz until the MCU sets a frequency
+    end
+    else if (data_valid)
     begin
         tx_byte_reg <= rx_byte;
         rx_byte_reg <= rx_byte;
     end
 end
 
-assign command = rx_byte_reg;
 assign tx_byte = tx_byte_reg;
+
+// NCO phase step from the frequency register:
+//
+// step  = f_out / f_s * 2^32
+// f_s   = 1.5 MHz / 32 = 46875 Hz
+// f_out = rx_byte_reg << 2 = 4 * rx_byte_reg
+// =>  step = rx_byte_reg * (4 * 2^32 / 46875) = rx_byte_reg * 366503.876 ≈ rx_byte_reg * 366504
+// e.g. rx_byte_reg = 150 -> 600 Hz -> step = 54975600 (exact: 54975581)
+// Range: rx_byte_reg is 8-bit, so f_out = 0 .. 1020 Hz in 4 Hz steps
+
+localparam [18:0] REG_TO_STEP = 19'd366504;   // round(4 * 2^32 / 46875)
+
+reg [31:0] step;
+
+always @(posedge clk or negedge rst_n)
+    if (!rst_n)
+        step <= 32'd0;
+    else
+        step <= rx_byte_reg * REG_TO_STEP;
+
+// Cordic sine generator
+nco_cordic sine_wave(
+    .clk(clk),
+    .rst_n(rst_n),
+    .tick(frame_tick),
+    .step(step),
+    .sin_o(sin_o),
+    .cos_o(cos_o),
+    .valid(valid)
+);
+
+// LEDs
+
+control_leds leds_block(
+    .clk(clk),
+    .cmd(rx_byte_reg),
+    .leds(leds)
+);
 
 endmodule

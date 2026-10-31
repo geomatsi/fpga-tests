@@ -5,6 +5,7 @@ use cortex_m as cm;
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 use panic_semihosting as _;
+use rotary_encoder_embedded::{Direction, RotaryEncoder};
 use stm32f4xx_hal::{
     gpio::Pull,
     pac,
@@ -12,6 +13,9 @@ use stm32f4xx_hal::{
     rcc,
     spi::{Mode, Phase, Polarity, Spi},
 };
+
+const FREQ_LO: u32 = 400;
+const FREQ_HI: u32 = 1000;
 
 #[entry]
 fn main() -> ! {
@@ -25,7 +29,11 @@ fn main() -> ! {
     let gpioc = dp.GPIOC.split(&mut rcc);
     let mut delay = cp.SYST.delay(&rcc.clocks);
 
+    // LED
+
     let mut led = gpioc.pc13.into_push_pull_output();
+
+    // SPI master
 
     let mut cs_n = gpioa.pa4.into_push_pull_output();
     cs_n.set_high();
@@ -45,20 +53,65 @@ fn main() -> ! {
         &mut rcc,
     );
 
+    // KY-040 rotary encoder
+
+    let clk = gpioa.pa12.into_pull_up_input();
+    let dt = gpioa.pa11.into_pull_up_input();
+    let button = gpioa.pa10.into_pull_up_input();
+    let mut enc = RotaryEncoder::new(dt, clk).into_standard_mode();
+    let mut button_pressed = false;
+
+    //
+
     let mut tx = [0u8; 1];
     let mut rx = [0u8; 1];
 
+    let mut freq = 600u32;
+    let freq_delta = 5u32;
+
+    hprintln!("FPGA I2S: initial frequency is {} Hz", freq);
+
     loop {
-        // full duplex: send one byte on MOSI, receive one byte from MISO
-        cs_n.set_low();
-        spi.transfer(&mut rx, &tx).unwrap();
-        cs_n.set_high();
+        match enc.update() {
+            Direction::Anticlockwise => {
+                freq = freq.saturating_add(freq_delta).clamp(FREQ_LO, FREQ_HI);
 
-        hprintln!("tx: 0x{:02x} rx: 0x{:02x}", tx[0], rx[0]);
+                tx[0] = (freq >> 2) as u8;
+                cs_n.set_low();
+                spi.transfer(&mut rx, &tx).unwrap();
+                cs_n.set_high();
 
-        tx[0] = tx[0].wrapping_add(1);
+                hprintln!("> freq {} Hz", ((freq >> 2) << 2));
+            }
+            Direction::Clockwise => {
+                freq = freq.saturating_sub(freq_delta).clamp(FREQ_LO, FREQ_HI);
 
-        delay.delay_ms(1000u32);
-        led.toggle();
+                tx[0] = (freq >> 2) as u8;
+                cs_n.set_low();
+                spi.transfer(&mut rx, &tx).unwrap();
+                cs_n.set_high();
+
+                hprintln!("> freq {} Hz", ((freq >> 2) << 2));
+            }
+            Direction::None => {}
+        }
+
+        match button.is_low() {
+            true => {
+                if !button_pressed {
+                    hprintln!("> button pressed...");
+                    button_pressed = true;
+                    led.toggle();
+                }
+            }
+            false => {
+                if button_pressed {
+                    hprintln!("> button released...");
+                    button_pressed = false;
+                }
+            }
+        }
+
+        delay.delay_ms(1);
     }
 }

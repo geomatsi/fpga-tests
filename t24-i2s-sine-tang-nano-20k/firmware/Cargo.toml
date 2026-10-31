@@ -21,6 +21,7 @@ cortex-m-rt = "0.7.5"
 cortex-m-semihosting = "0.5.0"
 panic-semihosting = "0.6.0"
 nb = "1.1"
+rotary-encoder-embedded = "0.5.0"
 
 [dependencies.stm32f4xx-hal]
 version = "0.23.0"
